@@ -1,0 +1,254 @@
+import { useState, useEffect } from "react";
+import { SlotReel } from "@/components/SlotReel";
+import { GameControls } from "@/components/GameControls";
+import { HighScoreList } from "@/components/HighScoreList";
+import { useCreateScore } from "@/hooks/use-scores";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import confetti from "canvas-confetti";
+import { motion, AnimatePresence } from "framer-motion";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Game Config
+const SPIN_COST = 5;
+const INITIAL_BALANCE = 100;
+
+export default function Home() {
+  const [balance, setBalance] = useState(INITIAL_BALANCE);
+  const [reels, setReels] = useState<[number, number, number]>([1, 2, 3]);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [lastWin, setLastWin] = useState(0);
+  const [showWinDialog, setShowWinDialog] = useState(false);
+  const [playerName, setPlayerName] = useState("");
+  
+  const createScore = useCreateScore();
+
+  const handleSpin = () => {
+    if (balance < SPIN_COST || isSpinning) return;
+
+    setBalance(prev => prev - SPIN_COST);
+    setIsSpinning(true);
+    setLastWin(0);
+
+    // Determine result immediately but show it after animation
+    // Weighted Randomness: 1 (Common) to 4 (Rare)
+    const spinReel = () => {
+      const rand = Math.random();
+      if (rand < 0.5) return 1;      // 50% chance for booger-1
+      if (rand < 0.8) return 2;      // 30% chance for booger-2
+      if (rand < 0.95) return 3;     // 15% chance for booger-3
+      return 4;                      // 5% chance for booger-4
+    };
+
+    const newReels: [number, number, number] = [spinReel(), spinReel(), spinReel()];
+
+    // Wait for animation delay (matching the reel component logic)
+    setTimeout(() => {
+      setReels(newReels);
+      checkWin(newReels);
+      setIsSpinning(false);
+    }, 2000); // 2s total spin time
+  };
+
+  const checkWin = (currentReels: number[]) => {
+    const [r1, r2, r3] = currentReels;
+    let winAmount = 0;
+
+    // Jackpot: 3 Rare (4s)
+    if (r1 === 4 && r2 === 4 && r3 === 4) {
+      winAmount = 100;
+      fireJackpotConfetti();
+    }
+    // Match 3 of any kind
+    else if (r1 === r2 && r2 === r3) {
+      winAmount = 50;
+      fireConfetti();
+    }
+    // Match 2 of any kind
+    else if (r1 === r2 || r2 === r3 || r1 === r3) {
+      winAmount = 10;
+    }
+
+    if (winAmount > 0) {
+      setLastWin(winAmount);
+      setBalance(prev => prev + winAmount);
+
+      // Only prompt for high score on big wins
+      if (winAmount >= 50) {
+        setTimeout(() => setShowWinDialog(true), 1000);
+      }
+    }
+  };
+
+  const fireConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#84cc16', '#eab308', '#ec4899']
+    });
+  };
+
+  const fireJackpotConfetti = () => {
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#84cc16', '#eab308']
+      });
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#84cc16', '#eab308']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  };
+
+  const handleRefill = () => {
+    setBalance(100);
+    fireConfetti(); // Little celebration for getting help
+  };
+
+  const handleSaveScore = async () => {
+    if (!playerName.trim()) return;
+    
+    try {
+      await createScore.mutateAsync({
+        name: playerName,
+        value: balance // Save current total balance as score
+      });
+      setShowWinDialog(false);
+      setPlayerName("");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen p-4 md:p-8 flex flex-col lg:flex-row items-start justify-center gap-8 lg:gap-12">
+      
+      {/* Main Game Area */}
+      <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col gap-8">
+        
+        {/* Header */}
+        <header className="text-center space-y-2">
+          <h1 className="text-5xl md:text-7xl font-display font-black text-primary drop-shadow-lg tracking-wider transform -rotate-2">
+            SNOT MACHINE
+          </h1>
+          <p className="text-lg text-muted-foreground font-medium flex items-center justify-center gap-2">
+            Match the boogers, win the tissues! 
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-5 h-5 text-accent cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Match 2: 10 Tissues</p>
+                <p>Match 3: 50 Tissues</p>
+                <p>Jackpot (3 Golden Boogers): 100 Tissues</p>
+              </TooltipContent>
+            </Tooltip>
+          </p>
+        </header>
+
+        {/* Slot Machine Container */}
+        <div className="bg-gradient-to-b from-green-500 to-green-700 p-4 md:p-8 rounded-[3rem] shadow-2xl relative border-b-8 border-green-900 box-shadow-slimy">
+          
+          {/* Decorative screws */}
+          <div className="absolute top-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+          <div className="absolute top-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+          <div className="absolute bottom-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+          <div className="absolute bottom-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+
+          {/* Reels Display */}
+          <div className="bg-black/20 p-4 rounded-[2rem] mb-8">
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              <SlotReel symbol={reels[0]} spinning={isSpinning} delay={0} />
+              <SlotReel symbol={reels[1]} spinning={isSpinning} delay={1} />
+              <SlotReel symbol={reels[2]} spinning={isSpinning} delay={2} />
+            </div>
+          </div>
+
+          {/* Win Notification Overlay */}
+          <AnimatePresence>
+            {lastWin > 0 && !isSpinning && (
+              <motion.div
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0 }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+              >
+                <div className="bg-accent text-accent-foreground font-display font-black text-4xl md:text-6xl px-8 py-4 rounded-full shadow-xl border-4 border-white whitespace-nowrap animate-bounce-custom">
+                  +{lastWin} Tissues!
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <GameControls 
+            onSpin={handleSpin}
+            onRefill={handleRefill}
+            canSpin={balance >= SPIN_COST}
+            isSpinning={isSpinning}
+            balance={balance}
+          />
+        </div>
+      </div>
+
+      {/* Sidebar / High Scores */}
+      <div className="w-full lg:w-auto flex justify-center lg:sticky lg:top-8">
+        <HighScoreList />
+      </div>
+
+      {/* Save Score Dialog */}
+      <Dialog open={showWinDialog} onOpenChange={setShowWinDialog}>
+        <DialogContent className="sm:max-w-md bg-white border-4 border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-display text-center text-primary">Huge Sneeze! 🤧</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center text-muted-foreground">
+              You've collected a massive pile of <span className="font-bold text-foreground">{balance} tissues</span>!
+              <br />Enter your name to join the Snotty Hall of Fame.
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Your Name (e.g. Booger Ben)"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="text-lg h-12 text-center border-2 border-primary/30 focus:border-primary"
+                maxLength={15}
+              />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              onClick={handleSaveScore}
+              disabled={!playerName.trim() || createScore.isPending}
+              className="w-full sm:w-auto px-8 py-6 text-xl font-display bg-primary hover:bg-primary/90"
+            >
+              {createScore.isPending ? "Saving..." : "Save My Score!"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
