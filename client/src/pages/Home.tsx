@@ -29,31 +29,45 @@ export default function Home() {
   
   const createScore = useCreateScore();
 
+  const [reelsComplete, setReelsComplete] = useState(0);
+
   const handleSpin = () => {
     if (balance < SPIN_COST || isSpinning) return;
 
     setBalance(prev => prev - SPIN_COST);
     setIsSpinning(true);
     setLastWin(0);
+    setReelsComplete(0);
 
-    // Determine result immediately but show it after animation
-    // Weighted Randomness: 1 (Common) to 4 (Rare)
+    // Weighted Randomness: 1-4 (Common to Rare), 5 = Jackpot (very rare)
     const spinReel = () => {
       const rand = Math.random();
-      if (rand < 0.5) return 1;      // 50% chance for booger-1
-      if (rand < 0.8) return 2;      // 30% chance for booger-2
-      if (rand < 0.95) return 3;     // 15% chance for booger-3
-      return 4;                      // 5% chance for booger-4
+      if (rand < 0.35) return 1;      // 35% - Slime blob
+      if (rand < 0.60) return 2;      // 25% - Runny nose
+      if (rand < 0.80) return 3;      // 20% - Tissue box
+      if (rand < 0.95) return 4;      // 15% - Used tissue
+      return 5;                        // 5% - Golden booger (jackpot symbol)
     };
 
     const newReels: [number, number, number] = [spinReel(), spinReel(), spinReel()];
+    setReels(newReels);
 
-    // Wait for animation delay (matching the reel component logic)
+    // Stop spinning after a short time (reels will animate to final position)
     setTimeout(() => {
-      setReels(newReels);
-      checkWin(newReels);
       setIsSpinning(false);
-    }, 2000); // 2s total spin time
+    }, 800);
+  };
+
+  // Check for win when all reels complete their animation
+  useEffect(() => {
+    if (!isSpinning && reelsComplete === 3) {
+      checkWin(reels);
+      setReelsComplete(0);
+    }
+  }, [reelsComplete, isSpinning]);
+
+  const handleReelComplete = () => {
+    setReelsComplete(prev => prev + 1);
   };
 
   const checkWin = (currentReels: number[]) => {
@@ -62,22 +76,27 @@ export default function Home() {
 
     // Only 3 matching symbols wins! (like a real slot machine)
     if (r1 === r2 && r2 === r3) {
-      // Jackpot: 3 Rare Golden Boogers (4s)
-      if (r1 === 4) {
+      // Jackpot: 3 Golden Boogers (5s)
+      if (r1 === 5) {
         winAmount = 100;
         fireJackpotConfetti();
       }
-      // 3 Purple Worms
-      else if (r1 === 3) {
+      // 3 Used Tissues
+      else if (r1 === 4) {
         winAmount = 50;
         fireConfetti();
       }
-      // 3 Yellow Balls
-      else if (r1 === 2) {
-        winAmount = 25;
+      // 3 Tissue Boxes
+      else if (r1 === 3) {
+        winAmount = 30;
         fireConfetti();
       }
-      // 3 Green Stars
+      // 3 Runny Noses
+      else if (r1 === 2) {
+        winAmount = 20;
+        fireConfetti();
+      }
+      // 3 Slime Blobs
       else {
         winAmount = 15;
         fireConfetti();
@@ -168,9 +187,10 @@ export default function Home() {
                 <Info className="w-5 h-5 text-accent cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-left">
-                <p>3 Green Stars: 15 Tissues</p>
-                <p>3 Yellow Balls: 25 Tissues</p>
-                <p>3 Purple Worms: 50 Tissues</p>
+                <p>3 Slime Blobs: 15 Tissues</p>
+                <p>3 Runny Noses: 20 Tissues</p>
+                <p>3 Tissue Boxes: 30 Tissues</p>
+                <p>3 Used Tissues: 50 Tissues</p>
                 <p>3 Golden Boogers: 100 Tissues (Jackpot!)</p>
               </TooltipContent>
             </Tooltip>
@@ -191,9 +211,9 @@ export default function Home() {
             {/* Reels Display */}
             <div className="bg-black/20 p-4 rounded-[2rem] mb-8">
               <div className="grid grid-cols-3 gap-2 md:gap-4">
-                <SlotReel symbol={reels[0]} spinning={isSpinning} delay={0} />
-                <SlotReel symbol={reels[1]} spinning={isSpinning} delay={1} />
-                <SlotReel symbol={reels[2]} spinning={isSpinning} delay={2} />
+                <SlotReel symbol={reels[0]} spinning={isSpinning} delay={0} onSpinComplete={handleReelComplete} />
+                <SlotReel symbol={reels[1]} spinning={isSpinning} delay={1} onSpinComplete={handleReelComplete} />
+                <SlotReel symbol={reels[2]} spinning={isSpinning} delay={2} onSpinComplete={handleReelComplete} />
               </div>
             </div>
 
