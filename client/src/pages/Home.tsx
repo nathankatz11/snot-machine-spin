@@ -60,19 +60,28 @@ export default function Home() {
     const [r1, r2, r3] = currentReels;
     let winAmount = 0;
 
-    // Jackpot: 3 Rare (4s)
-    if (r1 === 4 && r2 === 4 && r3 === 4) {
-      winAmount = 100;
-      fireJackpotConfetti();
-    }
-    // Match 3 of any kind
-    else if (r1 === r2 && r2 === r3) {
-      winAmount = 50;
-      fireConfetti();
-    }
-    // Match 2 of any kind
-    else if (r1 === r2 || r2 === r3 || r1 === r3) {
-      winAmount = 10;
+    // Only 3 matching symbols wins! (like a real slot machine)
+    if (r1 === r2 && r2 === r3) {
+      // Jackpot: 3 Rare Golden Boogers (4s)
+      if (r1 === 4) {
+        winAmount = 100;
+        fireJackpotConfetti();
+      }
+      // 3 Purple Worms
+      else if (r1 === 3) {
+        winAmount = 50;
+        fireConfetti();
+      }
+      // 3 Yellow Balls
+      else if (r1 === 2) {
+        winAmount = 25;
+        fireConfetti();
+      }
+      // 3 Green Stars
+      else {
+        winAmount = 15;
+        fireConfetti();
+      }
     }
 
     if (winAmount > 0) {
@@ -158,32 +167,35 @@ export default function Home() {
               <TooltipTrigger>
                 <Info className="w-5 h-5 text-accent cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Match 2: 10 Tissues</p>
-                <p>Match 3: 50 Tissues</p>
-                <p>Jackpot (3 Golden Boogers): 100 Tissues</p>
+              <TooltipContent className="max-w-xs text-left">
+                <p>3 Green Stars: 15 Tissues</p>
+                <p>3 Yellow Balls: 25 Tissues</p>
+                <p>3 Purple Worms: 50 Tissues</p>
+                <p>3 Golden Boogers: 100 Tissues (Jackpot!)</p>
               </TooltipContent>
             </Tooltip>
           </p>
         </header>
 
-        {/* Slot Machine Container */}
-        <div className="bg-gradient-to-b from-green-500 to-green-700 p-4 md:p-8 rounded-[3rem] shadow-2xl relative border-b-8 border-green-900 box-shadow-slimy">
-          
-          {/* Decorative screws */}
-          <div className="absolute top-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
-          <div className="absolute top-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
-          <div className="absolute bottom-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
-          <div className="absolute bottom-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+        {/* Slot Machine Container with Handle */}
+        <div className="flex items-stretch gap-0">
+          {/* Main Machine */}
+          <div className="bg-gradient-to-b from-green-500 to-green-700 p-4 md:p-8 rounded-l-[3rem] shadow-2xl relative border-b-8 border-green-900 flex-1">
+            
+            {/* Decorative screws */}
+            <div className="absolute top-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+            <div className="absolute top-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+            <div className="absolute bottom-6 left-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
+            <div className="absolute bottom-6 right-6 w-4 h-4 bg-gray-300 rounded-full shadow-inner border border-gray-400" />
 
-          {/* Reels Display */}
-          <div className="bg-black/20 p-4 rounded-[2rem] mb-8">
-            <div className="grid grid-cols-3 gap-2 md:gap-4">
-              <SlotReel symbol={reels[0]} spinning={isSpinning} delay={0} />
-              <SlotReel symbol={reels[1]} spinning={isSpinning} delay={1} />
-              <SlotReel symbol={reels[2]} spinning={isSpinning} delay={2} />
+            {/* Reels Display */}
+            <div className="bg-black/20 p-4 rounded-[2rem] mb-8">
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <SlotReel symbol={reels[0]} spinning={isSpinning} delay={0} />
+                <SlotReel symbol={reels[1]} spinning={isSpinning} delay={1} />
+                <SlotReel symbol={reels[2]} spinning={isSpinning} delay={2} />
+              </div>
             </div>
-          </div>
 
           {/* Win Notification Overlay */}
           <AnimatePresence>
@@ -201,13 +213,45 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <GameControls 
-            onSpin={handleSpin}
-            onRefill={handleRefill}
-            canSpin={balance >= SPIN_COST}
-            isSpinning={isSpinning}
-            balance={balance}
-          />
+            <GameControls 
+              onSpin={handleSpin}
+              onRefill={handleRefill}
+              canSpin={balance >= SPIN_COST}
+              isSpinning={isSpinning}
+              balance={balance}
+            />
+          </div>
+
+          {/* Pull Handle */}
+          <div className="flex flex-col items-center justify-center bg-gradient-to-b from-gray-600 to-gray-800 w-16 md:w-20 rounded-r-2xl border-b-8 border-gray-900 relative">
+            {/* Handle Track */}
+            <div className="absolute top-8 bottom-8 w-3 bg-gray-900 rounded-full" />
+            
+            {/* Handle Arm */}
+            <motion.button
+              onClick={() => {
+                if (balance >= SPIN_COST && !isSpinning) {
+                  handleSpin();
+                }
+              }}
+              disabled={balance < SPIN_COST || isSpinning}
+              className="relative z-10 cursor-pointer disabled:cursor-not-allowed"
+              whileTap={balance >= SPIN_COST && !isSpinning ? { y: 60 } : {}}
+              animate={isSpinning ? { y: [0, 60, 0] } : { y: 0 }}
+              transition={isSpinning ? { duration: 0.5, ease: "easeInOut" } : { type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {/* Handle Pole */}
+              <div className="w-4 h-20 bg-gradient-to-r from-gray-400 to-gray-300 rounded-full shadow-lg" />
+              
+              {/* Handle Ball */}
+              <div className="w-12 h-12 md:w-14 md:h-14 -mt-2 mx-auto rounded-full bg-gradient-to-br from-red-400 via-red-500 to-red-700 border-4 border-red-800 shadow-xl flex items-center justify-center">
+                <div className="w-4 h-4 rounded-full bg-white/40" />
+              </div>
+            </motion.button>
+
+            {/* Base */}
+            <div className="absolute bottom-4 w-10 h-6 bg-gray-700 rounded-t-lg" />
+          </div>
         </div>
       </div>
 
