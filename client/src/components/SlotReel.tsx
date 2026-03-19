@@ -6,12 +6,15 @@ interface SlotReelProps {
   spinning: boolean;
   delay?: number;
   onSpinComplete?: () => void;
+  isWinning?: boolean;
+  isNearMiss?: boolean;
+  isFreeSpinMode?: boolean;
 }
 
 const SYMBOLS = [1, 2, 3, 4, 5];
 const SYMBOL_HEIGHT = 100;
 
-export function SlotReel({ symbol, spinning, delay = 0, onSpinComplete }: SlotReelProps) {
+export function SlotReel({ symbol, spinning, delay = 0, onSpinComplete, isWinning, isNearMiss, isFreeSpinMode }: SlotReelProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [finalSymbol, setFinalSymbol] = useState(symbol);
   const hasCalledComplete = useRef(false);
@@ -51,8 +54,14 @@ export function SlotReel({ symbol, spinning, delay = 0, onSpinComplete }: SlotRe
   const targetY = -(finalSymbol - 1) * SYMBOL_HEIGHT;
 
   return (
-    <div 
-      className="relative w-full bg-gradient-to-b from-lime-50 to-green-100 rounded-2xl border-4 border-green-300 overflow-hidden shadow-[inset_0_4px_20px_rgba(0,0,0,0.15)]"
+    <div
+      className={`relative w-full rounded-2xl border-4 overflow-hidden transition-all duration-300
+        ${isFreeSpinMode
+          ? 'bg-gradient-to-b from-purple-100 to-purple-200 border-purple-400 shadow-[inset_0_4px_20px_rgba(147,51,234,0.2)]'
+          : 'bg-gradient-to-b from-lime-50 to-green-100 border-green-300 shadow-[inset_0_4px_20px_rgba(0,0,0,0.15)]'}
+        ${isWinning ? 'ring-4 ring-yellow-400 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.6)]' : ''}
+        ${isNearMiss ? 'animate-near-miss' : ''}
+      `}
       style={{ height: `${SYMBOL_HEIGHT}px` }}
     >
       <div className="absolute inset-0 overflow-hidden">
@@ -88,20 +97,34 @@ export function SlotReel({ symbol, spinning, delay = 0, onSpinComplete }: SlotRe
               className="flex-shrink-0 w-full flex items-center justify-center p-2"
               style={{ height: `${SYMBOL_HEIGHT}px` }}
             >
-              <img
+              <motion.img
                 src={getImageSrc(sym)}
                 alt={`Symbol ${sym}`}
                 className="w-full h-full object-contain drop-shadow-lg"
                 draggable={false}
+                animate={
+                  isWinning && sym === finalSymbol && !isAnimating
+                    ? { scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] }
+                    : {}
+                }
+                transition={
+                  isWinning ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" } : {}
+                }
               />
             </div>
           ))}
         </motion.div>
       </div>
 
+      {/* Top/bottom gradients */}
       <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/20 to-transparent pointer-events-none z-10" />
       <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-10" />
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none z-20" />
+
+      {/* Win glow overlay */}
+      {isWinning && (
+        <div className="absolute inset-0 bg-yellow-400/20 animate-pulse pointer-events-none z-30 rounded-2xl" />
+      )}
     </div>
   );
 }

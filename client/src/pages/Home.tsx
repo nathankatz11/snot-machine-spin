@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
-import { Info } from "lucide-react";
-import { playSpinStart, playReelStop, playWin, playJackpot, playLose, playRefill, playHandlePull } from "@/lib/sounds";
+import { Info, Volume2, X } from "lucide-react";
+import { playSpinStart, playReelStop, playWin, playJackpot, playLose, playRefill, playHandlePull, shouldShowSoundReminder, dismissSoundReminder } from "@/lib/sounds";
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +31,13 @@ export default function Home() {
   const createScore = useCreateScore();
 
   const [reelsComplete, setReelsComplete] = useState(0);
+  const [showSoundReminder, setShowSoundReminder] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowSoundReminder()) {
+      setShowSoundReminder(true);
+    }
+  }, []);
 
   const handleSpin = () => {
     if (balance < SPIN_COST || isSpinning) return;
@@ -161,7 +168,8 @@ export default function Home() {
 
   const handleRefill = () => {
     setBalance(100);
-    fireConfetti(); // Little celebration for getting help
+    fireConfetti();
+    playRefill();
   };
 
   const handleSaveScore = async () => {
@@ -185,6 +193,32 @@ export default function Home() {
       {/* Main Game Area */}
       <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col gap-8">
         
+        {/* Sound Reminder for Mobile */}
+        <AnimatePresence>
+          {showSoundReminder && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-yellow-100 border-2 border-yellow-400 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-lg"
+            >
+              <Volume2 className="w-6 h-6 text-yellow-600 flex-shrink-0" />
+              <p className="text-sm font-medium text-yellow-800 flex-1">
+                Turn off silent mode and turn up your volume for sound effects!
+              </p>
+              <button
+                onClick={() => {
+                  setShowSoundReminder(false);
+                  dismissSoundReminder();
+                }}
+                className="text-yellow-600 hover:text-yellow-800 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Header */}
         <header className="text-center space-y-2">
           <h1 className="text-5xl md:text-7xl font-display font-black text-primary drop-shadow-lg tracking-wider transform -rotate-2">
@@ -261,6 +295,7 @@ export default function Home() {
             <motion.button
               onClick={() => {
                 if (balance >= SPIN_COST && !isSpinning) {
+                  playHandlePull();
                   handleSpin();
                 }
               }}
