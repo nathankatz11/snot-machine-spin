@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { Info } from "lucide-react";
+import { playSpinStart, playReelStop, playWin, playJackpot, playLose, playRefill, playHandlePull } from "@/lib/sounds";
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +39,7 @@ export default function Home() {
     setIsSpinning(true);
     setLastWin(0);
     setReelsComplete(0);
+    playSpinStart();
 
     // Weighted Randomness: 1-4 (Common to Rare), 5 = Jackpot (very rare)
     const spinReel = () => {
@@ -68,6 +70,7 @@ export default function Home() {
 
   const handleReelComplete = () => {
     setReelsComplete(prev => prev + 1);
+    playReelStop();
   };
 
   const checkWin = (currentReels: number[]) => {
@@ -80,26 +83,31 @@ export default function Home() {
       if (r1 === 5) {
         winAmount = 100;
         fireJackpotConfetti();
+        playJackpot();
       }
       // 3 Used Tissues
       else if (r1 === 4) {
         winAmount = 50;
         fireConfetti();
+        playWin();
       }
       // 3 Tissue Boxes
       else if (r1 === 3) {
         winAmount = 30;
         fireConfetti();
+        playWin();
       }
       // 3 Runny Noses
       else if (r1 === 2) {
         winAmount = 20;
         fireConfetti();
+        playWin();
       }
       // 3 Slime Blobs
       else {
         winAmount = 15;
         fireConfetti();
+        playWin();
       }
     }
 
@@ -111,6 +119,8 @@ export default function Home() {
       if (winAmount >= 50) {
         setTimeout(() => setShowWinDialog(true), 1000);
       }
+    } else {
+      playLose();
     }
   };
 

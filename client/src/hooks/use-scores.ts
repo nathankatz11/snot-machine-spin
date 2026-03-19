@@ -1,13 +1,43 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type ScoreInput } from "@shared/routes";
+import type { Score, InsertScore } from "@shared/schema";
+
+const STORAGE_KEY = "snot-machine-scores";
+
+function getStoredScores(): Score[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function saveScores(scores: Score[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+}
+
+// Seed default scores if empty
+function ensureSeeded(): Score[] {
+  const scores = getStoredScores();
+  if (scores.length === 0) {
+    const seeds: Score[] = [
+      { id: 1, name: "Snot King", value: 500, createdAt: new Date() },
+      { id: 2, name: "Booger Boy", value: 300, createdAt: new Date() },
+      { id: 3, name: "Slimy Sam", value: 150, createdAt: new Date() },
+    ];
+    saveScores(seeds);
+    return seeds;
+  }
+  return scores;
+}
 
 export function useScores() {
   return useQuery({
-    queryKey: [api.scores.list.path],
+    queryKey: ["scores"],
     queryFn: async () => {
-      const res = await fetch(api.scores.list.path);
-      if (!res.ok) throw new Error("Failed to fetch scores");
-      return api.scores.list.responses[200].parse(await res.json());
+      const scores = ensureSeeded();
+      return scores.sort((a, b) => b.value - a.value).slice(0, 10);
     },
   });
 }
@@ -15,24 +45,20 @@ export function useScores() {
 export function useCreateScore() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: ScoreInput) => {
-      const res = await fetch(api.scores.create.path, {
-        method: api.scores.create.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      
-      if (!res.ok) {
-        if (res.status === 400) {
-          const error = api.scores.create.responses[400].parse(await res.json());
-          throw new Error(error.message);
-        }
-        throw new Error("Failed to save score");
-      }
-      return api.scores.create.responses[201].parse(await res.json());
+    mutationFn: async (data: InsertScore): Promise<Score> => {
+      const scores = getStoredScores();
+      const newScore: Score = {
+        id: Date.now(),
+        name: data.name,
+        value: data.value,
+        createdAt: new Date(),
+      };
+      scores.push(newScore);
+      saveScores(scores);
+      return newScore;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.scores.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["scores"] });
     },
   });
 }
