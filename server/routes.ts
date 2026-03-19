@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -29,13 +29,12 @@ export async function registerRoutes(
     }
   });
 
-  // Seed the database
+  // Seed with some initial data
   await seedDatabase();
 
   return httpServer;
 }
 
-// Seed function to ensure there's at least some data
 async function seedDatabase() {
   const existingScores = await storage.getScores();
   if (existingScores.length === 0) {

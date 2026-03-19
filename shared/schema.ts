@@ -1,19 +1,16 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const scores = pgTable("scores", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  value: integer("value").notNull(), // How many coins/points won
-  createdAt: timestamp("created_at").defaultNow(),
+export interface Score {
+  id: number;
+  name: string;
+  value: number;
+  createdAt: Date | null;
+}
+
+export const insertScoreSchema = z.object({
+  name: z.string().min(1).max(15),
+  value: z.number().int().min(0),
 });
 
-export const insertScoreSchema = createInsertSchema(scores).omit({ 
-  id: true, 
-  createdAt: true 
-});
-
-export type Score = typeof scores.$inferSelect;
 export type InsertScore = z.infer<typeof insertScoreSchema>;
 export type CreateScoreRequest = InsertScore;
