@@ -35,10 +35,15 @@
 }
 
 @layer base {
+  html, body {
+    @apply overflow-x-hidden;
+    max-width: 100vw;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
-    background-image: 
+    background-image:
       radial-gradient(circle at 10% 20%, hsla(84, 80%, 80%, 0.2) 0%, transparent 20%),
       radial-gradient(circle at 90% 80%, hsla(45, 80%, 80%, 0.2) 0%, transparent 20%);
   }
@@ -52,13 +57,13 @@
   .text-shadow-sm {
     text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
   }
-  
+
   .text-shadow-lg {
     text-shadow: 4px 4px 0px rgba(0,0,0,0.15);
   }
 
   .box-shadow-slimy {
-    box-shadow: 
+    box-shadow:
       0 10px 15px -3px rgba(106, 163, 13, 0.3),
       0 4px 6px -2px rgba(106, 163, 13, 0.1),
       inset 0 -4px 0 0 rgba(0,0,0,0.1);
@@ -87,4 +92,91 @@
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; box-shadow: 0 0 20px hsl(var(--secondary) / 0.5); }
   50% { opacity: .8; box-shadow: 0 0 40px hsl(var(--secondary) / 0.8); }
+}
+
+/* Near-miss shake animation */
+.animate-near-miss {
+  animation: near-miss 0.4s ease-in-out;
+}
+
+@keyframes near-miss {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-3px); }
+  20% { transform: translateX(3px); }
+  30% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  50% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+/* Slime drip animation */
+.animate-drip {
+  animation: drip 4s ease-in infinite;
+}
+
+@keyframes drip {
+  0% { transform: translateY(-10px); opacity: 0; }
+  10% { opacity: 0.7; }
+  70% { opacity: 0.5; }
+  100% { transform: translateY(80px); opacity: 0; }
+}
+
+/* Screen shake for jackpot */
+.animate-screen-shake {
+  animation: screen-shake 0.6s ease-in-out;
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5px, -3px); }
+  20% { transform: translate(5px, 3px); }
+  30% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  50% { transform: translate(-3px, 3px); }
+  60% { transform: translate(3px, -1px); }
+  70% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -1px); }
+  90% { transform: translate(-1px, 1px); }
+}
+
+/* Marquee text scroll */
+.animate-marquee {
+  animation: marquee 6s linear infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Spin glow for winning symbols */
+.animate-win-glow {
+  animation: win-glow 1s ease-in-out infinite;
+}
+
+@keyframes win-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.8), 0 0 60px rgba(234, 179, 8, 0.4); }
+}
+
+/* Flying tissues animation */
+.animate-fly-tissue {
+  animation: fly-tissue 1s ease-out forwards;
+}
+
+@keyframes fly-tissue {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--fly-x, 100px), var(--fly-y, -200px)) scale(0.3) rotate(720deg); opacity: 0; }
+}
+
+/* Jackpot rainbow */
+.animate-rainbow {
+  animation: rainbow 2s linear infinite;
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
 }
